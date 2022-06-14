@@ -19,12 +19,12 @@ const pool = new Pool ({
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithEmail = email => {
-  return pool.query(`SELECT * FROM users WHERE email = $1`, [email])
-  .then((res) => {
+  return pool.query(`SELECT * FROM users WHERE email = $1;`, [email])
+  .then(res => {
     console.log(res.rows)
     return res.rows
   })
-  .catch((err) => {
+  .catch(err => {
     console.log(err.message);
   })
 }
@@ -36,12 +36,12 @@ exports.getUserWithEmail = getUserWithEmail;
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithId = id => {
-  return pool.query(`SELECT * FROM users WHERE id = $1`, [id])
-  .then((res) => {
+  return pool.query(`SELECT * FROM users WHERE id = $1;`, [id])
+  .then(res => {
     console.log(res.rows)
     return res.rows
   })
-  .catch((err) => {
+  .catch(err => {
     console.log(err.message);
   })
 }
@@ -53,12 +53,17 @@ exports.getUserWithId = getUserWithId;
  * @param {{name: string, password: string, email: string}} user
  * @return {Promise<{}>} A promise to the user.
  */
-const addUser =  function(user) {
-  const userId = Object.keys(users).length + 1;
-  user.id = userId;
-  users[userId] = user;
-  return Promise.resolve(user);
-}
+const addUser =  user => {
+  return pool.query(`INSERT INTO users (name, email, password)
+  VALUES ($1, $2, $3);`, [user.name, user.email, user.password])
+  .then(res => {
+    console.log(res.rows)
+    return res.rows
+  })
+  .catch(err => {
+    console.log(err.message);
+  })
+};
 exports.addUser = addUser;
 
 /// Reservations
@@ -82,10 +87,9 @@ exports.getAllReservations = getAllReservations;
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = (options, limit = 10) => {
-  return pool
-  .query(`SELECT * FROM properties LIMIT $1`, [limit])
-  .then((res) => {res.rows})
-  .catch((err) => {
+  return pool.query(`SELECT * FROM properties LIMIT $1;`, [limit])
+  .then(res => {res.rows})
+  .catch(err => {
     console.log(err.message);
   });
 };
