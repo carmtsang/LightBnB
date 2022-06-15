@@ -19,10 +19,8 @@ const pool = new Pool({
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithEmail = email => {
-  return pool.query(`SELECT * FROM users WHERE email = $1;`, [email])
-    .then(res => {
-      return res.rows[0];
-    })
+  return pool.query(`SELECT * FROM users WHERE LOWER(email) = $1`, [email.toLowerCase()])
+    .then(res => res.rows[0])
     .catch(err => {
       console.log(err.message);
     });
@@ -97,10 +95,31 @@ exports.getAllReservations = getAllReservations;
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = (options, limit = 10) => {
-  return pool.query(`SELECT * FROM properties LIMIT $1`, [limit])
-    .then(res => {
-      return res.rows;
-    })
+  // empty array to take in paramaters depending on the query
+  const queryParams = [];
+
+  let queryString = `
+  SELECT properties.*, avg(property_reviews.rating) as average_rating
+  FROM properties
+  JOIN property_reviews ON property_id = properties.id
+  `;
+
+  if (options.city) {
+    queryParams.push(`%${options.city}%`);
+    queryString += `WHERE city LIKE $${queryParams.length} `;
+  }
+
+  queryParams.push(limit);
+  queryString += `
+  GROUP BY properties.id
+  ORDER BY cost_per_night
+  LIMIT $${queryParams.length};
+  `;
+
+  console.log(queryString, queryParams);
+
+  return pool.query(queryString, queryParams)
+    .then(res => res.rows)
     .catch(err => {
       console.log(err.message);
     });
