@@ -43,7 +43,6 @@ const getUserWithId = id => {
 };
 exports.getUserWithId = getUserWithId;
 
-
 /**
  * Add a new user to the database.
  * @param {{name: string, password: string, email: string}} user
@@ -135,22 +134,20 @@ const getAllProperties = (options, limit = 10) => {
     queryString += `${queryType(queryParams)} cost_per_night <= $${queryParams.length} `;
   };
   
-
-
- 
-  if (options.minimum_rating) {
+  // if there is a rating, add it to query params. rating input over 5, return 5 stars.
+  if (options.minimum_rating > 0 && options.minimum_rating <= 5) {
     queryParams.push(`${options.minimum_rating}`);
-    console.log('in min rating:', queryParams)
-  }
+  } else if (options.minimum_rating > 5) {
+    queryParams.push(5);
+  };
 
   const ratingQuery = minRating => {
     let rating = ``;
-    if (minRating > 0) {
+    if (minRating) {
       rating = `HAVING avg(property_reviews.rating) >= $${queryParams.length - 1} `
-      console.log('in ratequery:', queryParams.length)
     }
     return rating;
-  }
+  };
 
   queryParams.push(limit);
   queryString += `
