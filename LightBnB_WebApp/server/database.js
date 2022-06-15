@@ -9,8 +9,6 @@ const pool = new Pool({
   database: 'lightbnb'
 });
 
-// pool.query(`SELECT title FROM properties LIMIT 10`).then(response => {console.log(response)});
-
 /// Users
 
 /**
@@ -20,7 +18,12 @@ const pool = new Pool({
  */
 const getUserWithEmail = email => {
   return pool.query(`SELECT * FROM users WHERE LOWER(email) = $1`, [email.toLowerCase()])
-    .then(res => res.rows[0])
+    .then(res => {
+      if (res.rows.length) {
+        return res.rows[0];
+      }
+      return null;
+    })
     .catch(err => {
       console.log(err.message);
     });
@@ -49,7 +52,7 @@ exports.getUserWithId = getUserWithId;
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser =  user => {
-  return pool.query(`INSERT INTO users (name, email, password) VALUES ($1, $2, $3);`, [user.name, user.email, user.password])
+  return pool.query(`INSERT INTO users (name, email, password) VALUES ($1, $2, $3)`, [user.name, user.email, user.password])
     .then(res => {
       return res.rows;
     })
@@ -134,7 +137,7 @@ const getAllProperties = (options, limit = 10) => {
     queryString += `${queryType(queryParams)} cost_per_night <= $${queryParams.length} `;
   };
   
-  // if there is a rating, add it to query params. rating input over 5, return 5 stars.
+  // add rating to query params. rating input over 5, return 5 stars.
   if (options.minimum_rating > 0 && options.minimum_rating <= 5) {
     queryParams.push(`${options.minimum_rating}`);
   } else if (options.minimum_rating > 5) {
