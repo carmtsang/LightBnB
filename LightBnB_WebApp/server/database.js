@@ -104,36 +104,45 @@ const getAllProperties = (options, limit = 10) => {
   JOIN property_reviews ON property_id = properties.id
   `;
 
-  // query for city
-  if (options.city) {
-    queryParams.push(`%${options.city}%`);
-    queryString += `WHERE city LIKE $${queryParams.length} `;
-  }
+  // function to determine query
+  const queryType = queryParam => {
+    let queryString = `WHERE`;
+    if (queryParam.length > 1) {
+      queryString = `AND`;
+    };
+    return queryString;
+  };
 
   // query for 'my listings'
   if (options.owner_id) {
     queryParams.push(`${options.owner_id}`);
-    queryString += `WHERE owner_id = $${queryParams.length}`;
+    queryString += `${queryType(queryParams)} owner_id = $${queryParams.length} `;
   };
+
+  // query for city
+  if (options.city) {
+    queryParams.push(`%${options.city}%`);
+    queryString += `${queryType(queryParams)} city LIKE $${queryParams.length} `;
+    console.log('in city:', queryParams);
+  }
 
   if (options.minimum_price_per_night) {
     queryParams.push(`${options.minimum_price_per_night * 100}`);
-    queryString += `WHERE cost_per_night >= $${queryParams.length}`;
+    queryString += `${queryType(queryParams)} cost_per_night >= $${queryParams.length} `;
   };
   
   if (options.maximum_price_per_night) {
     queryParams.push(`${options.maximum_price_per_night * 100}`);
-    queryString += `WHERE cost_per_night <= $${queryParams.length}`;
+    queryString += `${queryType(queryParams)} cost_per_night <= $${queryParams.length} `;
   };
   
-  // if (options.minimum_price_per_night && options.maximum_price_per_night) {
-  //   queryParams.push(`${options.minimum_price_per_night * 100}, ${options.maximum_price_per_night * 100}`);
-  //   queryString += `WHERE cost_per_night >= $${queryParams.length} AND cost_per_night >= $${queryParams.length}`;
+
+
  
-  // if (options.minimum_rating) {
-  //   queryParams.push(`${options.minimum_rating}`);
-  //   queryString += `HAVING avg(property_reviews.rating) >= $${queryParams.length}`
-  // }
+  if (options.minimum_rating) {
+    queryParams.push(`${options.minimum_rating}`);
+    queryString += `HAVING avg(property_reviews.rating) >= $${queryParams.length}`
+  }
 
   // city //min cost//max cost//min rating //city & min cost // city & max cost // city & min rating // city 
 
