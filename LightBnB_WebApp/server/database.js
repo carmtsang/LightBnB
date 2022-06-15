@@ -104,9 +104,15 @@ const getAllProperties = (options, limit = 10) => {
   JOIN property_reviews ON property_id = properties.id
   `;
 
+  // query for city
   if (options.city) {
     queryParams.push(`%${options.city}%`);
     queryString += `WHERE city LIKE $${queryParams.length} `;
+  }
+
+  if (options.owner_id) {
+    queryParams.push(`${options.owner_id}`);
+    queryString += `WHERE owner_id = $${queryParams.length}`
   }
 
   queryParams.push(limit);
