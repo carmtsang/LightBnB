@@ -38,7 +38,10 @@ exports.getUserWithEmail = getUserWithEmail;
 const getUserWithId = id => {
   return pool.query(`SELECT * FROM users WHERE id = $1;`, [id])
     .then(res => {
-      return res.rows[0];
+      if (res.rows.length) {
+        return res.rows[0];
+      }
+      return null;
     })
     .catch(err => {
       console.log(err.message);
@@ -53,9 +56,7 @@ exports.getUserWithId = getUserWithId;
  */
 const addUser =  user => {
   return pool.query(`INSERT INTO users (name, email, password) VALUES ($1, $2, $3)`, [user.name, user.email, user.password])
-    .then(res => {
-      return res.rows;
-    })
+    .then(res => res.rows)
     .catch(err => {
       console.log(err.message);
    })
@@ -70,21 +71,21 @@ exports.addUser = addUser;
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = (guest_id, limit = 10) => {
-  return pool.query(`SELECT reservations.*, properties.*, avg(property_reviews.rating) as average_rating
+  const queryString = `SELECT reservations.*, properties.*, avg(rating) as average_rating
   FROM reservations 
   JOIN properties ON properties.id = property_id
   JOIN property_reviews ON reservations.id = reservation_id 
   WHERE reservations.guest_id = $1
   GROUP BY reservations.id, properties.id, properties.cost_per_night
   ORDER BY reservations.start_date
-  LIMIT $2;`, [guest_id, limit])
-    .then(res => {
-      console.log(res.rows)
-      return res.rows
-    })
+  LIMIT $2;`
+
+  const queryParams = [guest_id, limit];
+  return pool.query(queryString, queryParams)
+    .then(res => res.rows)
     .catch(err => {
       console.log(err.message);
-    })
+    });
 };
 exports.getAllReservations = getAllReservations;
 
@@ -137,25 +138,22 @@ const getAllProperties = (options, limit = 10) => {
     queryString += `${queryType(queryParams)} cost_per_night <= $${queryParams.length} `;
   };
   
+  queryString += `
+  GROUP BY properties.id
+  `;
+
   // add rating to query params. rating input over 5, return 5 stars.
   if (options.minimum_rating > 0 && options.minimum_rating <= 5) {
     queryParams.push(`${options.minimum_rating}`);
-  } else if (options.minimum_rating > 5) {
-    queryParams.push(5);
+    queryString += `HAVING avg(property_reviews.rating) >= $${queryParams.length}`;
   };
-
-  const ratingQuery = minRating => {
-    let rating = ``;
-    if (minRating) {
-      rating = `HAVING avg(property_reviews.rating) >= $${queryParams.length - 1} `
-    }
-    return rating;
+  if (options.minimum_rating > 5) {
+    queryParams.push(5);
+    queryString += `HAVING avg(property_reviews.rating) >= $${queryParams.length}`;
   };
 
   queryParams.push(limit);
   queryString += `
-  GROUP BY properties.id
-  ${ratingQuery(options.minimum_rating)}
   ORDER BY cost_per_night
   LIMIT $${queryParams.length};
   `;
@@ -176,10 +174,19 @@ exports.getAllProperties = getAllProperties;
  * @param {{}} property An object containing all of the property details.
  * @return {Promise<{}>} A promise to the property.
  */
-const addProperty = function(property) {
-  const propertyId = Object.keys(properties).length + 1;
-  property.id = propertyId;
-  properties[propertyId] = property;
-  return Promise.resolve(property);
-}
+const addProperty = property => {
+  const queryString = `
+  INSERT INTO properties (owner_id, title, description, thumbnail_photo_url, cover_photo_url, cost_per_night, street, city, province, post_code, country, parking_spaces, number_of_bathrooms, number_of_bedrooms) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+  RETURNING *;
+  `;
+  const queryParams = [property.user_id, property.title, property.description, property.thumbnail_photo_url, property.cover_photo_url, property.cost_per_night, property.street, property.city, property.province, property.post_code, property.country, property.parking_spaces, property.number_of_bathrooms, property.number_of_bedrooms];
+  return pool.query(queryString, queryParams)
+    .then(res => {
+      console.log(res.rows);
+      return res.rows;
+    })
+    .catch(err => {
+      console.log(err.message);
+    })
+};
 exports.addProperty = addProperty;
