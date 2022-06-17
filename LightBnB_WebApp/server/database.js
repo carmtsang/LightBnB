@@ -1,5 +1,5 @@
-const properties = require('./json/properties.json');
-const users = require('./json/users.json');
+const { queryType } = require('./helpers');
+
 
 const { Pool } = require('pg');
 const pool = new Pool({
@@ -77,6 +77,7 @@ exports.addUser = addUser;
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = (guest_id, limit = 10) => {
+  const queryParams = [guest_id, limit];
   const queryString = `SELECT reservations.*, properties.*, avg(rating) as average_rating
   FROM reservations 
   JOIN properties ON properties.id = property_id
@@ -85,8 +86,7 @@ const getAllReservations = (guest_id, limit = 10) => {
   GROUP BY reservations.id, properties.id, properties.cost_per_night
   ORDER BY reservations.start_date
   LIMIT $2;`
-
-  const queryParams = [guest_id, limit];
+  
   return pool.query(queryString, queryParams)
     .then(res => res.rows)
     .catch(err => {
@@ -104,7 +104,6 @@ exports.getAllReservations = getAllReservations;
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = (options, limit = 10) => {
-  // empty array to take in paramaters depending on the query
   const queryParams = [];
 
   let queryString = `
@@ -114,19 +113,17 @@ const getAllProperties = (options, limit = 10) => {
   `;
 
   // function to determine query
-  const queryType = queryParam => {
-    let queryString = `WHERE`;
-    if (queryParam.length > 1) {
-      queryString = `AND`;
-    };
-    return queryString;
-  };
+
 
   // query for 'my listings'
-  if (options.owner_id) {
-    queryParams.push(`${options.owner_id}`);
-    queryString += `${queryType(queryParams)} owner_id = $${queryParams.length} `;
-  };
+  const ownerProperty = param => {
+    if (param) {
+      queryParams.push(`${param}`);
+      queryString += `${queryType(queryParams)} owner_id = $${queryParams.length} `;
+    };
+  }
+
+  ownerProperty(options.owner_id);
 
   // query for city
   if (options.city) {
@@ -173,7 +170,6 @@ const getAllProperties = (options, limit = 10) => {
     });
 };
 exports.getAllProperties = getAllProperties;
-
 
 /**
  * Add a property to the database
