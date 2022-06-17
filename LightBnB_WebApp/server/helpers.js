@@ -7,6 +7,16 @@ const queryType = queryParam => {
   return queryString;
 };
 
+// to add to query string in getAllProperties. Find all properties belonging to a user;
+const ownerProperty = param => {
+  if (param) {
+    queryParams.push(`${param}`);
+    queryString += `${queryType(queryParams)} owner_id = $${queryParams.length} `;
+  };
+};
+
+
 module.exports = {
-  queryType
+  queryType,
+  ownerProperty
 };
