@@ -1,6 +1,6 @@
 # LightBnB
 
-LightBnB is a project 
+LightBnB is a project focused on the database. Back-end queries are used to allow users to search for accomodations in an online travel app. The prject conntects to a PostgreSQL database using Node's postgres library. 
 
 ## Getting Started
 1. Install dependencies using the `npm install` command.
