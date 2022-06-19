@@ -57,9 +57,9 @@ LightBnB is a project created by [Carmen](https://github.com/carmtsang) for Ligh
   * `database.js` is responsible for all queries to the database.
   * `helpers.js` contains the helper functions.
 
-  ## Dependencies
-  - bcrypt
-  - bodyparser
-  - cookie-session
-  - nodemon
-  - pg
+## Dependencies
+- bcrypt
+- bodyparser
+- cookie-session
+- nodemon
+- pg

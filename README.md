@@ -27,9 +27,9 @@ Create a new listing.
 * `seeds` sql seed files that for the database.
 * `docs` screen shots of web app.
 
-  ## Dependencies
-  - bcrypt
-  - bodyparser
-  - cookie-session
-  - nodemon
-  - pg
+## Dependencies
+- bcrypt
+- bodyparser
+- cookie-session
+- nodemon
+- pg
